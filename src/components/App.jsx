@@ -1,30 +1,34 @@
 import React from 'react';
-import { Component } from 'react';
 import { Section } from './Section/Section';
 import { ContactForm } from './ContactForm/ContactForm';
 import { Filter } from './Filter/Filter';
 import { ContactList } from './ContactList/ContactList';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
 
-  componentDidUpdate(prevState) {
-    if (prevState.contact !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-
-  componentDidMount() {
+  useEffect(() => {
     if (localStorage.getItem('contacts')) {
-      this.setState({ contacts: JSON.parse(localStorage.getItem('contacts')) });
+      const localStorageState = JSON.parse(localStorage.getItem('contacts'));
+      if (localStorageState.length) {
+        setContacts(localStorageState);
+      }
     }
-  }
+  }, []);
 
-  submitHandler = newContact => {
-    const ContactExist = this.state.contacts.find(
+  useEffect(() => {
+    if (!contacts.length) {
+      console.log('return');
+      return;
+    }
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const submitHandler = newContact => {
+    const ContactExist = contacts.find(
       contact => contact.name.toLowerCase() === newContact.name.toLowerCase()
     );
 
@@ -32,19 +36,10 @@ export class App extends Component {
       alert(newContact.name + 'is already in contacts.');
       return;
     }
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, newContact],
-    }));
+    setContacts([...contacts, newContact]);
   };
 
-  filterHandler = value => {
-    this.setState({
-      filter: value,
-    });
-  };
-
-  generateContactList = () => {
-    const { contacts, filter } = this.state;
+  const generateContactList = () => {
     let contactList;
 
     if (filter) {
@@ -57,35 +52,29 @@ export class App extends Component {
     return contactList;
   };
 
-  deleteContact = contactID => {
-    const newArray = this.state.contacts.filter(
-      contact => contact.id !== contactID
-    );
-    this.setState({
-      contacts: newArray,
-    });
+  const deleteContact = contactID => {
+    const newArray = contacts.filter(contact => contact.id !== contactID);
+    setContacts(newArray);
   };
 
-  render() {
-    return (
-      <div
-        style={{
-          height: '100vh',
-          color: '#010101',
-        }}
-      >
-        <Section title={'Phonebook'}>
-          <ContactForm onSubmit={contact => this.submitHandler(contact)} />
-        </Section>
+  return (
+    <div
+      style={{
+        height: '100vh',
+        color: '#010101',
+      }}
+    >
+      <Section title={'Phonebook'}>
+        <ContactForm onSubmit={contact => submitHandler(contact)} />
+      </Section>
 
-        <Section title={'Contacts'}>
-          <Filter onChange={value => this.filterHandler(value)} />
-          <ContactList
-            contacts={this.generateContactList()}
-            onClickDelete={contactID => this.deleteContact(contactID)}
-          />
-        </Section>
-      </div>
-    );
-  }
-}
+      <Section title={'Contacts'}>
+        <Filter onChange={value => setFilter(value)} />
+        <ContactList
+          contacts={generateContactList()}
+          onClickDelete={contactID => deleteContact(contactID)}
+        />
+      </Section>
+    </div>
+  );
+};
